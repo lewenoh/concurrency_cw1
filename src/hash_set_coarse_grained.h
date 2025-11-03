@@ -29,6 +29,12 @@ class HashSetCoarseGrained : public HashSetBase<T> {
     assert(false && "Not implemented yet");
     return 0u;
   }
+
+  private:
+    size_t size_;
+    std::vector<std::vector<T>> buckets_;
+    std::mutex mutex_;
+    
 };
 
 #endif  // HASH_SET_COARSE_GRAINED_H

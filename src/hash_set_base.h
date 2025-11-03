@@ -1,7 +1,10 @@
 #ifndef HASH_SET_BASE_H
 #define HASH_SET_BASE_H
 
+#include <vector>
+#include <mutex>
 #include <cstddef>
+#include <cassert>
 
 template <typename T>
 class HashSetBase {

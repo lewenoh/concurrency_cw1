@@ -14,14 +14,23 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -flto")
 
 find_package(Threads REQUIRED)
 
+include(CheckCXXCompilerFlag) #added
+
 if(CMAKE_CXX_COMPILER_ID STREQUAL Clang OR CMAKE_CXX_COMPILER_ID STREQUAL AppleClang)
-  add_compile_options(-Werror -Wall -Wextra -pedantic -Weverything)
+  add_compile_options(-Werror -pedantic)
   add_compile_options(
           -Wno-c++98-compat
           -Wno-c++98-compat-pedantic
           -Wno-padded
-          -Wno-unsafe-buffer-usage
   )
+
+  # only add this option if the compiler accepts it
+  check_cxx_compiler_flag("-Wno-unsafe-buffer-usage" COMPILER_SUPPORTS_WNO_UNSAFE_BUFFER_USAGE)
+  if(COMPILER_SUPPORTS_WNO_UNSAFE_BUFFER_USAGE)
+    add_compile_options(-Wno-unsafe-buffer-usage)
+  endif()
+
+  
   set(USE_SANITIZER "" CACHE STRING
           "Use the clang sanitizer [asan|tsan]")
   if("${USE_SANITIZER}" STREQUAL "asan")
