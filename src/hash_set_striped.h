@@ -25,7 +25,6 @@ class HashSetStriped : public HashSetBase<T> {
   
   bool Add(T element) final {
     size_t hash = std::hash<T>()(element);
-    size_t index = hash % buckets_.size();
 
     bool need_resize = false;
 
@@ -34,6 +33,7 @@ class HashSetStriped : public HashSetBase<T> {
     // which would cause a deadlock
     { 
       std::lock_guard<std::mutex> lock(locks_[hash % stripeCount_]);
+      size_t index = hash % buckets_.size();
       auto &bucket = buckets_[index];
       for (const auto &elem: bucket) {
       if (elem == element) {
@@ -50,7 +50,7 @@ class HashSetStriped : public HashSetBase<T> {
 
     if (need_resize) {
 
-      std::lock_guard<std::mutex> resize_guard(resize_mutex_); // global resizer mutex  
+      std::lock_guard<std::mutex> resize_guard(resize_mutex_); // global resizer mutex
 
       if (Policy()) Resize(); // Policy() will acquire all stripe locks safely
     }
@@ -60,9 +60,9 @@ class HashSetStriped : public HashSetBase<T> {
 
   bool Remove(T element) final {
     size_t hash = std::hash<T>()(element);
-    size_t index = hash % buckets_.size();
 
     std::lock_guard<std::mutex> lock(locks_[hash % stripeCount_]);
+    size_t index = hash % buckets_.size();
     auto &bucket = buckets_[index];
     for (size_t i = 0; i < bucket.size(); i++) {
       if (bucket[i] == element) {
@@ -76,9 +76,9 @@ class HashSetStriped : public HashSetBase<T> {
 
   [[nodiscard]] bool Contains(T element) final {
     size_t hash = std::hash<T>()(element);
-    size_t index = hash % buckets_.size();
 
     std::lock_guard<std::mutex> lock(locks_[hash % stripeCount_]);
+    size_t index = hash % buckets_.size();
     auto &bucket = buckets_[index];
     for (const auto &elem: bucket) {
       if (elem == element) {
@@ -114,12 +114,11 @@ class HashSetStriped : public HashSetBase<T> {
 
     return false;
   }
-  
+
   void Resize() {
     std::vector<std::unique_lock<std::mutex>> guards;
     guards.reserve(stripeCount_);
     for (size_t i = 0; i < stripeCount_; ++i) guards.emplace_back(locks_[i]);
-
     bucketThreshold_ = bucketThreshold_ * 2;
     int oldCapacity = buckets_.size();
     int newCapacity = oldCapacity * 2;
